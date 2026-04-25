@@ -1,0 +1,23 @@
+# Local configuration files
+config.local.php
+.env
+
+# XAMPP / PHP artifacts
+php_error.log
+*.log
+
+# IDEs
+.vscode/
+.idea/
+
+# OS Junk
+Thumbs.db
+.DS_Store
+mask
+.bak
+*.tmp
+*.temp
+
+# Credentials
+*.key
+*.pem

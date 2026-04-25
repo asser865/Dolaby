@@ -1,0 +1,13 @@
+RewriteEngine On
+
+# Redirect to index.php if file doesn't exist
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteRule ^(.*)$ index.php?url=$1 [QSA,L]
+
+# Prevent direct access to includes and config files
+<FilesMatch "^(includes|header_functions|config)\.php$">
+    Order allow,deny
+    Deny from all
+</FilesMatch>
+
