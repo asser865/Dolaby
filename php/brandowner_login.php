@@ -39,53 +39,52 @@ renderHeader(true);
         display: flex;
         align-items: center;
         justify-content: center;
-        background: var(--bg);
+        background: linear-gradient(135deg, var(--bg) 0%, #e0f2f1 100%);
         padding: 20px;
-        margin-top: 20px;
     }
 
     .login-container {
         width: 100%;
-        max-width: 450px;
-        background: var(--white);
+        max-width: 380px;
+        background: rgba(255, 255, 255, 0.85);
+        backdrop-filter: blur(12px);
+        -webkit-backdrop-filter: blur(12px);
         border-radius: 20px;
-        padding: 30px 30px;
-        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+        padding: 20px 24px;
+        box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05), 0 8px 10px -6px rgba(0, 0, 0, 0.05);
+        border: 1px solid rgba(255, 255, 255, 0.6);
         position: relative;
-        z-index: 1;
     }
 
     .logo {
         text-align: center;
-        font-size: 42px;
-        font-weight: 900;
+        font-size: 26px;
+        font-weight: 800;
         color: var(--teal-600);
-        margin-bottom: 40px;
+        margin-bottom: 28px;
         letter-spacing: -1px;
     }
 
     .login-form {
         display: flex;
         flex-direction: column;
-        align-items: center;
-        gap: 24px;
+        gap: 8px;
     }
 
     .input-wrapper {
         position: relative;
         width: 100%;
-        max-width: 380px;
     }
 
     .input-field {
         width: 100%;
-        padding: 16px 18px 16px 52px;
-        font-size: 15px;
+        padding: 10px 12px 10px 38px;
+        font-size: 14px;
         font-weight: 500;
         color: var(--dark);
-        background: var(--white);
+        background: rgba(255, 255, 255, 0.7);
         border: 1px solid var(--divider);
-        border-radius: 12px;
+        border-radius: 10px;
         transition: all 0.3s ease;
         outline: none;
     }
@@ -95,211 +94,188 @@ renderHeader(true);
         box-shadow: 0 0 0 3px rgba(0, 184, 212, 0.1);
     }
 
+    .input-wrapper i.fa-envelope, .input-wrapper i.fa-lock {
+        position: absolute;
+        left: 14px;
+        top: 50%;
+        transform: translateY(-50%);
+        color: var(--muted);
+        font-size: 14px;
+        pointer-events: none;
+    }
+
     .password-toggle {
         position: absolute;
-        right: 18px;
+        right: 12px;
         top: 50%;
         transform: translateY(-50%);
         background: none;
         border: none;
         color: var(--muted);
         cursor: pointer;
-        font-size: 18px;
-        padding: 0;
-        width: 24px;
-        height: 24px;
+        padding: 4px;
         display: flex;
         align-items: center;
         justify-content: center;
-        transition: all 0.3s ease;
-        z-index: 2;
-    }
-
-    .password-toggle:hover {
-        color: var(--teal-600);
-    }
-
-    .password-toggle i {
-        transition: transform 0.3s ease, opacity 0.3s ease;
-    }
-
-    .password-toggle.active i.fa-eye {
-        transform: scale(0) rotate(180deg);
-        opacity: 0;
-    }
-
-    .password-toggle.active i.fa-eye-slash {
-        transform: scale(1) rotate(0deg);
-        opacity: 1;
-    }
-
-    .password-toggle:not(.active) i.fa-eye {
-        transform: scale(1) rotate(0deg);
-        opacity: 1;
-    }
-
-    .password-toggle:not(.active) i.fa-eye-slash {
-        transform: scale(0) rotate(-180deg);
-        opacity: 0;
     }
 
     .login-button {
         width: 100%;
-        max-width: 380px;
-        padding: 16px 32px;
-        font-size: 16px;
+        padding: 10px;
+        font-size: 15px;
         font-weight: 700;
-        color: white;
+        color: var(--white);
         background: var(--teal-600);
         border: none;
-        border-radius: 12px;
+        border-radius: 10px;
         cursor: pointer;
         transition: all 0.3s ease;
+        margin-top: 4px;
+        box-shadow: 0 4px 12px rgba(13, 148, 136, 0.2);
     }
 
     .login-button:hover {
         background: var(--teal-500);
-        transform: translateY(-2px);
-        box-shadow: 0 4px 12px rgba(0, 184, 212, 0.3);
     }
 
     .error-message {
-        color: var(--danger);
-        background: rgba(220, 38, 38, 0.1);
-        padding: 12px;
+        color: #991b1b;
+        background: #fef2f2;
+        padding: 8px;
         border-radius: 8px;
-        margin-bottom: 20px;
+        margin-bottom: 12px;
+        font-size: 12px;
         text-align: center;
+        border: 1px solid #fee2e2;
     }
 
-    .success-message {
-        color: var(--success);
-        background: rgba(22, 163, 74, 0.1);
-        padding: 12px;
-        border-radius: 8px;
-        margin-bottom: 20px;
-        text-align: center;
+    /* Quick Test Chips */
+    .test-chips {
+        display: flex;
+        gap: 6px;
+        justify-content: center;
+        margin: 10px 0 0 0;
     }
 
-    .footer-text {
-        text-align: center;
-        font-size: 14px;
-        color: var(--muted);
-        margin-top: 28px;
-    }
-
-    .footer-text a {
+    .chip {
+        background: rgba(0, 184, 212, 0.06);
+        border: 1px solid rgba(0, 184, 212, 0.15);
+        border-radius: 100px;
+        padding: 3px 8px;
+        display: flex;
+        align-items: center;
+        gap: 4px;
+        font-size: 10px;
+        font-weight: 700;
         color: var(--teal-600);
-        text-decoration: none;
-        font-weight: 600;
+    }
+
+    .chip button {
+        background: none;
+        border: none;
+        cursor: pointer;
+        color: var(--teal-600);
+        padding: 0;
+        opacity: 0.7;
+    }
+
+    .chip button:hover { opacity: 1; }
+
+    #copyAlert {
+        position: absolute;
+        top: -30px;
+        left: 50%;
+        transform: translateX(-50%);
+        font-size: 10px;
+        color: var(--white);
+        font-weight: 700;
+        opacity: 0;
+        transition: all 0.3s ease;
+        pointer-events: none;
+        background: var(--teal-600);
+        padding: 4px 10px;
+        border-radius: 100px;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.1);
     }
 </style>
 
 <div class="login-page-wrapper">
-<div class="login-container">
-    <h1 class="logo">Brand Owner Login</h1>
+    <div class="login-container">
+        <div id="copyAlert">Copied!</div>
+        <h1 class="logo">Brand Owner Login</h1>
 
-    <?php if (isset($_SESSION['error'])): ?>
-        <div class="error-message"><?= htmlspecialchars($_SESSION['error']) ?></div>
-        <?php unset($_SESSION['error']); ?>
-    <?php endif; ?>
+        <?php if (isset($_SESSION['error'])): ?>
+            <div class="error-message"><?= htmlspecialchars($_SESSION['error']) ?></div>
+            <?php unset($_SESSION['error']); ?>
+        <?php endif; ?>
 
-    <?php if (isset($_SESSION['success'])): ?>
-        <div class="success-message"><?= htmlspecialchars($_SESSION['success']) ?></div>
-        <?php unset($_SESSION['success']); ?>
-    <?php endif; ?>
+        <form method="POST" action="<?= BASE_URL ?>/brandowner/login" class="login-form" id="brandOwnerLoginForm">
+            <div class="input-wrapper">
+                <i class="fas fa-envelope"></i>
+                <input type="email" name="email" placeholder="Brand owner email" class="input-field" required>
+            </div>
 
-    <form method="POST" action="<?= BASE_URL ?>/brandowner/login" class="login-form" id="brandOwnerLoginForm">
-        <div class="input-wrapper">
-            <i class="fas fa-envelope" style="position: absolute; left: 18px; top: 50%; transform: translateY(-50%); color: var(--muted); font-size: 18px;"></i>
-            <input type="email" name="email" placeholder="Email" class="input-field" required>
+            <div class="input-wrapper">
+                <i class="fas fa-lock"></i>
+                <input type="password" name="password" id="password" placeholder="Password" class="input-field" required>
+                <button type="button" class="password-toggle" id="passwordToggle">
+                    <i class="fas fa-eye"></i>
+                </button>
+            </div>
+
+            <button type="submit" class="login-button" id="brandOwnerLoginBtn">Portal Login</button>
+
+            <div class="test-chips">
+                <div class="chip">
+                    <i class="fas fa-user"></i>
+                    <span id="testEmail">owner@harbaa.com</span>
+                    <button type="button" onclick="copyToClipboard('testEmail')"><i class="far fa-copy"></i></button>
+                </div>
+                <div class="chip">
+                    <i class="fas fa-key"></i>
+                    <span id="testPass">pass123</span>
+                    <button type="button" onclick="copyToClipboard('testPass')"><i class="far fa-copy"></i></button>
+                </div>
+            </div>
+        </form>
+
+        <div style="text-align: center; margin-top: 24px;">
+            <a href="<?= BASE_URL ?>/login" style="font-size: 12px; color: var(--teal-600); text-decoration: none; font-weight: 600;">Back to customer login</a>
         </div>
-
-        <div class="input-wrapper">
-            <i class="fas fa-lock" style="position: absolute; left: 18px; top: 50%; transform: translateY(-50%); color: var(--muted); font-size: 18px;"></i>
-            <input type="password" name="password" id="password" placeholder="Password" class="input-field" required>
-            <button type="button" class="password-toggle" id="passwordToggle" aria-label="Toggle password visibility">
-                <i class="fas fa-eye"></i>
-                <i class="fas fa-eye-slash" style="position: absolute;"></i>
-            </button>
-        </div>
-
-        <button type="submit" class="login-button" id="brandOwnerLoginBtn">
-            <span class="btn-text">Login</span>
-        </button>
-    </form>
-
-    <script>
-        // Password toggle functionality
-        const passwordToggle = document.getElementById('passwordToggle');
-        const passwordInput = document.getElementById('password');
-        
-        if (passwordToggle && passwordInput) {
-            passwordToggle.addEventListener('click', function() {
-                const isPassword = passwordInput.type === 'password';
-                passwordInput.type = isPassword ? 'text' : 'password';
-                passwordToggle.classList.toggle('active');
-            });
-        }
-
-        document.getElementById('brandOwnerLoginForm').addEventListener('submit', function(e) {
-            const loginBtn = document.getElementById('brandOwnerLoginBtn');
-            const btnText = loginBtn.querySelector('.btn-text');
-            if (btnText) {
-                loginBtn.disabled = true;
-                loginBtn.classList.add('loading');
-                loginBtn.style.opacity = '0.8';
-                loginBtn.style.cursor = 'not-allowed';
-                btnText.innerHTML = '<i class="fas fa-spinner fa-spin" style="margin-right: 8px; animation: spin 1s linear infinite;"></i>Logging in...';
-            }
-        });
-    </script>
-    
-    <style>
-        @keyframes pulse {
-            0%, 100% {
-                opacity: 0.8;
-                transform: scale(1);
-            }
-            50% {
-                opacity: 1;
-                transform: scale(1.02);
-            }
-        }
-        
-        @keyframes spin {
-            from {
-                transform: rotate(0deg);
-            }
-            to {
-                transform: rotate(360deg);
-            }
-        }
-        
-        .login-button.loading {
-            animation: pulse 2s ease-in-out infinite;
-        }
-        
-        .login-button:disabled {
-            opacity: 0.8;
-            cursor: not-allowed;
-            transform: none;
-        }
-        
-        .login-button:hover:not(:disabled) {
-            background: var(--teal-500);
-            transform: translateY(-2px);
-            box-shadow: 0 4px 12px rgba(0, 184, 212, 0.3);
-        }
-    </style>
-
-    <div class="footer-text">
-        <a href="<?= BASE_URL ?>/login">Back to Customer Login</a>
     </div>
 </div>
-</div>
 
-<!-- Body and HTML closing tags handled by Controller -->
+<script>
+    const passwordToggle = document.getElementById('passwordToggle');
+    const passwordInput = document.getElementById('password');
+    if (passwordToggle && passwordInput) {
+        passwordToggle.addEventListener('click', () => {
+            const isPass = passwordInput.type === 'password';
+            passwordInput.type = isPass ? 'text' : 'password';
+            passwordToggle.querySelector('i').className = isPass ? 'fas fa-eye-slash' : 'fas fa-eye';
+        });
+    }
+
+    function copyToClipboard(id) {
+        const text = document.getElementById(id).innerText;
+        navigator.clipboard.writeText(text).then(() => {
+            const alert = document.getElementById('copyAlert');
+            alert.style.top = '12px';
+            alert.style.opacity = '1';
+            setTimeout(() => {
+                alert.style.top = '-40px';
+                alert.style.opacity = '0';
+            }, 1500);
+        });
+    }
+
+    document.getElementById('brandOwnerLoginForm').addEventListener('submit', function() {
+        const btn = document.getElementById('brandOwnerLoginBtn');
+        btn.disabled = true;
+        btn.innerText = 'Authorizing...';
+        btn.style.opacity = '0.8';
+    });
+</script>
 
 </body>
 </html>
