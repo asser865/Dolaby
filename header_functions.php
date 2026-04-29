@@ -32,7 +32,7 @@ function renderHeader($isBrandOwner = false) {
   <header class="app-header" style="justify-content: space-between; padding: 0 20px;">
     <div class="header-logo"><a href="<?= BASE_URL ?>/brandowner" style="text-decoration: none; color: inherit;">Dolaby</a></div>
     <div class="header-icons" style="display: flex; align-items: center; gap: 12px;">
-      <a href="<?= BASE_URL ?>/logout" class="header-icon-btn" title="Logout" style="display: flex; align-items: center; justify-content: center; width: 40px; height: 40px; border-radius: 8px; transition: all 0.3s ease;">
+      <a href="<?= BASE_URL ?>/logout?role=brandowner" class="header-icon-btn" title="Logout" style="display: flex; align-items: center; justify-content: center; width: 40px; height: 40px; border-radius: 8px; transition: all 0.3s ease;">
         <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
           <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/>
         </svg>
@@ -91,11 +91,12 @@ function renderHeader($isBrandOwner = false) {
         <?php endif; ?>
       </a>
       <?php if (isset($_SESSION['user_id'])): ?>
-        <a href="<?= BASE_URL ?>/account" class="header-icon-btn" title="Account">
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-            <circle cx="12" cy="8" r="4" stroke="currentColor" stroke-width="1.2" />
-            <path d="M6 21v-2a4 4 0 0 1 4-4h4a4 4 0 0 1 4 4v2" stroke="currentColor" stroke-width="1.2" />
+        <a href="<?= BASE_URL ?>/account" title="Account" style="display: flex; align-items: center; gap: 8px; text-decoration: none; padding: 6px 14px; background: rgba(0, 184, 212, 0.08); border-radius: 100px; color: var(--teal-600); border: 1px solid rgba(0, 184, 212, 0.15); transition: background 0.2s;">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" style="flex-shrink: 0;">
+            <circle cx="12" cy="8" r="4" stroke="currentColor" stroke-width="2" />
+            <path d="M6 21v-2a4 4 0 0 1 4-4h4a4 4 0 0 1 4 4v2" stroke="currentColor" stroke-width="2" />
           </svg>
+          <span style="font-size: 13px; font-weight: 700; white-space: nowrap;"><?= isset($_SESSION['user_name']) ? htmlspecialchars(explode(' ', trim($_SESSION['user_name']))[0]) : 'Account' ?></span>
         </a>
         <a href="<?= BASE_URL ?>/logout" class="header-icon-btn" title="Logout">
           <svg width="24" height="24" viewBox="0 0 24 24" fill="none">

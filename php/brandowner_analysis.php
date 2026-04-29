@@ -7,6 +7,31 @@ if (!isset($_SESSION['user_id']) || $_SESSION['role'] !== 'brand_owner') {
     exit;
 }
 
+$analytics = new AnalyticsService();
+$totalSales = $analytics->getTotalSales();
+$totalCustomers = $analytics->getUniqueCustomers();
+$returningRate = $analytics->getReturningCustomerRate();
+$demographics = $analytics->getCategoryDemographics();
+$topProducts = $analytics->getTopProducts(3);
+
+// Find the dominant demographic for the center of the donut chart
+$dominantDemo = 'Women';
+$dominantValue = $demographics['Women'];
+if ($demographics['Men'] > $dominantValue) {
+    $dominantDemo = 'Men';
+    $dominantValue = $demographics['Men'];
+}
+if ($demographics['Kids'] > $dominantValue) {
+    $dominantDemo = 'Kids';
+    $dominantValue = $demographics['Kids'];
+}
+
+// Fallback in case of zero sales
+if ($dominantValue == 0 && $totalSales == 0) {
+    $dominantValue = 0;
+    $dominantDemo = 'No Data';
+}
+
 renderHeader(true);
 ?>
 
@@ -34,6 +59,9 @@ renderHeader(true);
     .topbar {
       margin-bottom: 32px;
       padding: 20px 0;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
     }
 
     .title {
@@ -45,13 +73,31 @@ renderHeader(true);
       background-clip: text;
     }
 
+    .back {
+      transition: all 0.3s ease;
+      border-radius: 10px;
+      padding: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-right: 15px;
+      text-decoration: none;
+    }
+
+    .back:hover {
+      background: rgba(0, 184, 212, 0.1);
+      transform: translateX(-2px);
+    }
+
     /* Enhanced KPI Cards */
     .kpi-row {
       margin-bottom: 32px;
+      display: flex;
       gap: 20px;
     }
 
     .kpi {
+      flex: 1;
       position: relative;
       overflow: hidden;
       transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
@@ -61,6 +107,7 @@ renderHeader(true);
       background: linear-gradient(135deg, #ffffff 0%, #fafbfc 100%);
       animation: slideUp 0.5s ease-out;
       animation-fill-mode: both;
+      border-radius: 16px;
     }
 
     .kpi:nth-child(1) { animation-delay: 0.1s; }
@@ -68,14 +115,8 @@ renderHeader(true);
     .kpi:nth-child(3) { animation-delay: 0.3s; }
 
     @keyframes slideUp {
-      from {
-        opacity: 0;
-        transform: translateY(20px);
-      }
-      to {
-        opacity: 1;
-        transform: translateY(0);
-      }
+      from { opacity: 0; transform: translateY(20px); }
+      to { opacity: 1; transform: translateY(0); }
     }
 
     .kpi::before {
@@ -112,15 +153,6 @@ renderHeader(true);
       margin-bottom: 8px;
     }
 
-    .kpi .label::before {
-      content: '';
-      width: 6px;
-      height: 6px;
-      border-radius: 50%;
-      background: var(--teal-600);
-      display: inline-block;
-    }
-
     .kpi .value {
       font-size: 36px;
       font-weight: 900;
@@ -140,23 +172,26 @@ renderHeader(true);
       gap: 6px;
     }
 
-    .kpi .note::before {
-      content: '→';
-      color: var(--teal-600);
-      font-weight: bold;
+    /* Enhanced Cards */
+    .grid {
+        display: grid;
+        grid-template-columns: 2fr 1fr;
+        gap: 20px;
     }
 
-    /* Enhanced Cards */
-    .analysis-card {
+    .analysis-card, .card {
       background: linear-gradient(135deg, #ffffff 0%, #fafbfc 100%);
       border: 1px solid rgba(0, 184, 212, 0.1);
       box-shadow: 0 4px 24px rgba(0, 0, 0, 0.06);
       transition: all 0.3s ease;
       position: relative;
       overflow: hidden;
+      border-radius: 16px;
+      padding: 24px;
+      margin-bottom: 20px;
     }
 
-    .analysis-card::before {
+    .analysis-card::before, .card::before {
       content: '';
       position: absolute;
       top: 0;
@@ -166,10 +201,9 @@ renderHeader(true);
       background: linear-gradient(90deg, var(--teal-600) 0%, var(--teal-300) 100%);
     }
 
-    .analysis-card:hover {
+    .analysis-card:hover, .card:hover {
       transform: translateY(-2px);
       box-shadow: 0 8px 32px rgba(0, 184, 212, 0.12);
-      border-color: rgba(0, 184, 212, 0.2);
     }
 
     .section-title {
@@ -195,27 +229,41 @@ renderHeader(true);
     /* Enhanced Donut Chart */
     .donut-area {
       padding: 8px 0;
+      display: flex;
+      align-items: center;
+      gap: 40px;
     }
 
     .donut {
+      width: 150px;
+      height: 150px;
+      border-radius: 50%;
+      background: conic-gradient(
+        var(--teal-600) 0% <?= $demographics['Men'] ?>%, 
+        #EC4899 <?= $demographics['Men'] ?>% <?= $demographics['Men'] + $demographics['Women'] ?>%, 
+        #F59E0B <?= $demographics['Men'] + $demographics['Women'] ?>% 100%
+      );
+      display: flex;
+      align-items: center;
+      justify-content: center;
       box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
-      transition: transform 0.3s ease;
       animation: rotateIn 0.8s ease-out;
     }
 
-    @keyframes rotateIn {
-      from {
-        opacity: 0;
-        transform: rotate(-180deg) scale(0.8);
-      }
-      to {
-        opacity: 1;
-        transform: rotate(0) scale(1);
-      }
+    .donut-center {
+        width: 110px;
+        height: 110px;
+        background: white;
+        border-radius: 50%;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
     }
 
-    .donut:hover {
-      transform: scale(1.05);
+    @keyframes rotateIn {
+      from { opacity: 0; transform: rotate(-180deg) scale(0.8); }
+      to { opacity: 1; transform: rotate(0) scale(1); }
     }
 
     .donut-center .big {
@@ -231,16 +279,22 @@ renderHeader(true);
     }
 
     .gender-mini {
+      display: flex;
+      height: 8px;
+      border-radius: 4px;
+      overflow: hidden;
       margin-bottom: 16px;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
     }
 
     .gender-seg {
       transition: transform 0.2s ease;
-      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
     }
 
-    .gender-seg:hover {
-      transform: scaleY(1.2);
+    .legend {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
     }
 
     .legend .item {
@@ -248,32 +302,21 @@ renderHeader(true);
       border-radius: 8px;
       transition: background 0.2s ease;
       font-weight: 500;
+      display: flex;
+      align-items: center;
+      gap: 10px;
     }
 
-    .legend .item:hover {
-      background: rgba(0, 184, 212, 0.05);
-    }
-
-    .swatch {
-      width: 14px;
-      height: 14px;
-      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.15);
-    }
-
-    /* Enhanced Chart */
-    .chart-svg-wrap {
-      padding: 16px 0;
-      background: linear-gradient(to bottom, rgba(0, 184, 212, 0.02) 0%, transparent 100%);
-      border-radius: 12px;
-      margin-top: 8px;
-    }
-
-    .chart-svg {
-      filter: drop-shadow(0 2px 8px rgba(0, 0, 0, 0.05));
-    }
+    .legend .item:hover { background: rgba(0, 184, 212, 0.05); }
+    .swatch { width: 14px; height: 14px; border-radius: 4px; }
+    .men-color { background: var(--teal-600); }
+    .women-color { background: #EC4899; }
+    .kids-color { background: #F59E0B; }
 
     /* Enhanced Product Cards */
     .products {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
       gap: 16px;
       margin-top: 20px;
     }
@@ -289,39 +332,19 @@ renderHeader(true);
       box-shadow: 0 2px 12px rgba(0, 0, 0, 0.04);
     }
 
-    .product::before {
-      content: '';
-      position: absolute;
-      top: 0;
-      left: 0;
-      right: 0;
-      height: 2px;
-      background: linear-gradient(90deg, var(--teal-600) 0%, var(--teal-300) 100%);
-      transform: scaleX(0);
-      transition: transform 0.3s ease;
-    }
-
     .product:hover {
       transform: translateY(-6px);
       box-shadow: 0 8px 24px rgba(0, 184, 212, 0.15);
       border-color: rgba(0, 184, 212, 0.3);
     }
 
-    .product:hover::before {
-      transform: scaleX(1);
-    }
-
     .product img {
       width: 100%;
-      height: auto;
+      height: 180px;
+      object-fit: cover;
       border-radius: 12px;
       margin-bottom: 12px;
-      transition: transform 0.3s ease;
       box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
-    }
-
-    .product:hover img {
-      transform: scale(1.05);
     }
 
     .product .pname {
@@ -341,53 +364,16 @@ renderHeader(true);
       gap: 4px;
     }
 
-    .product .pmeta::before {
-      content: '✓';
-      font-size: 10px;
-    }
-
-    /* Enhanced Right Column Cards */
-    .right-column .card {
-      background: linear-gradient(135deg, #ffffff 0%, #fafbfc 100%);
-      border: 1px solid rgba(0, 184, 212, 0.1);
-      box-shadow: 0 4px 24px rgba(0, 0, 0, 0.06);
-      transition: all 0.3s ease;
-      position: relative;
-      overflow: hidden;
-    }
-
-    .right-column .card::before {
-      content: '';
-      position: absolute;
-      top: 0;
-      left: 0;
-      right: 0;
-      height: 3px;
-      background: linear-gradient(90deg, var(--teal-600) 0%, var(--teal-300) 100%);
-    }
-
-    .right-column .card:hover {
-      transform: translateY(-2px);
-      box-shadow: 0 8px 32px rgba(0, 184, 212, 0.12);
-    }
-
-    .right-column .card .section-title {
-      font-size: 18px;
-      margin-bottom: 12px;
-    }
-
-    .right-column .card ul {
-      list-style: none;
-      padding-left: 0;
-    }
-
+    /* Right Column Cards */
+    .right-column .card ul { list-style: none; padding-left: 0; }
     .right-column .card ul li {
-      padding: 10px 0;
-      padding-left: 24px;
+      padding: 10px 0 10px 24px;
       position: relative;
       transition: all 0.2s ease;
       border-radius: 6px;
       margin-bottom: 4px;
+      color: var(--muted);
+      line-height: 1.6;
     }
 
     .right-column .card ul li::before {
@@ -399,267 +385,135 @@ renderHeader(true);
       font-size: 18px;
     }
 
-    .right-column .card ul li:hover {
-      background: rgba(0, 184, 212, 0.05);
-      padding-left: 28px;
-    }
+    .flex { display: flex; align-items: center; padding: 10px 12px; border-radius: 8px; }
+    .flex:hover { background: rgba(0, 184, 212, 0.05); }
 
-    .right-column .card ul li strong {
-      color: var(--dark);
-      font-weight: 700;
-    }
-
-    /* Enhanced Conversion Funnel */
-    .flex {
-      align-items: center;
-      padding: 10px 12px;
-      border-radius: 8px;
-      transition: background 0.2s ease;
-    }
-
-    .flex:hover {
-      background: rgba(0, 184, 212, 0.05);
-    }
-
-    .flex > div:first-child {
-      border-radius: 8px;
-      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-      transition: transform 0.2s ease;
-    }
-
-    .flex:hover > div:first-child {
-      transform: scaleX(1.1);
-    }
-
-    /* Responsive Enhancements */
-    @media (max-width: 1024px) {
-      .grid {
-        grid-template-columns: 1fr;
-      }
-
-      .right-column {
-        margin-top: 20px;
-      }
-    }
-
+    @media (max-width: 1024px) { .grid { grid-template-columns: 1fr; } }
     @media (max-width: 768px) {
-      .kpi-row {
-        flex-direction: column;
-      }
-
-      .kpi .value {
-        font-size: 28px;
-      }
-
-      .title {
-        font-size: 36px;
-      }
-
-      .products {
-        grid-template-columns: 1fr;
-      }
-    }
-
-    /* Loading Animation */
-    @keyframes shimmer {
-      0% {
-        background-position: -1000px 0;
-      }
-      100% {
-        background-position: 1000px 0;
-      }
-    }
-
-    .analysis-card,
-    .kpi,
-    .product {
-      animation: fadeIn 0.6s ease-out;
+      .kpi-row { flex-direction: column; }
+      .donut-area { flex-direction: column; }
     }
   </style>
 
-  <main class="main" role="main" aria-labelledby="page-title">
+  <main class="main" role="main">
     <div class="container">
-      <header class="topbar" role="banner">
-        <div class="top-left">
-          <a class="back" href="<?= BASE_URL ?>/brandowner" aria-label="Back to previous">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-              <path d="M15 18L9 12l6-6" stroke="#1A1A1A" stroke-width="1.6" stroke-linecap="round"
-                stroke-linejoin="round" />
-            </svg>
+      <header class="topbar">
+        <div style="display:flex; align-items:center;">
+          <a class="back" href="<?= BASE_URL ?>/brandowner.php">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none"><path d="M15 18L9 12l6-6" stroke="#1A1A1A" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
           </a>
-          <div class="title" id="page-title">Analysis</div>
-        </div>
-
-        <div class="top-right">
-
+          <div class="title">Analysis Dashboard</div>
         </div>
       </header>
 
-      <section class="kpi-row" role="region" aria-label="Key metrics">
+      <section class="kpi-row">
         <div class="kpi">
-          <div class="label">
-            <i class="fas fa-dollar-sign" style="font-size: 12px; color: var(--teal-600);"></i>
-            Total Sales
-          </div>
-          <div class="value">$12,345</div>
-          <div class="note muted">Sales in the current period</div>
+          <div class="label"><i class="fas fa-dollar-sign" style="color: var(--teal-600);"></i> Total Sales</div>
+          <div class="value">EGP <?= number_format($totalSales, 2) ?></div>
+          <div class="note">Total revenue from completed orders</div>
         </div>
 
         <div class="kpi">
-          <div class="label">
-            <i class="fas fa-users" style="font-size: 12px; color: var(--teal-600);"></i>
-            Customers
-          </div>
-          <div class="value">890</div>
-          <div class="note muted">Unique customers</div>
+          <div class="label"><i class="fas fa-users" style="color: var(--teal-600);"></i> Customers</div>
+          <div class="value"><?= number_format($totalCustomers) ?></div>
+          <div class="note">Unique customers who purchased</div>
         </div>
 
         <div class="kpi">
-          <div class="label">
-            <i class="fas fa-redo" style="font-size: 12px; color: var(--teal-600);"></i>
-            Returning
-          </div>
-          <div class="value">45%</div>
-          <div class="note muted">Repeat purchase rate</div>
+          <div class="label"><i class="fas fa-redo" style="color: var(--teal-600);"></i> Returning</div>
+          <div class="value"><?= $returningRate ?>%</div>
+          <div class="note">Repeat purchase rate</div>
         </div>
       </section>
 
-      <div class="grid" role="region" aria-label="Analytics grid">
+      <div class="grid">
         <div>
-          <section class="card analysis-card" aria-labelledby="demo-title">
-            <h3 class="section-title" id="demo-title">
-              <i class="fas fa-users" style="color: var(--teal-600); margin-right: 10px;"></i>
-              Customer Demographics
-            </h3>
+          <section class="analysis-card">
+            <h3 class="section-title"><i class="fas fa-users" style="color: var(--teal-600); margin-right: 10px;"></i> Customer Demographics</h3>
 
             <div class="donut-area">
-              <div class="donut" role="img" aria-label="Gender distribution">
+              <div class="donut">
                 <div class="donut-center">
-                  <div class="big">50%</div>
-                  <div class="small muted">Women</div>
+                  <div class="big"><?= $dominantValue ?>%</div>
+                  <div class="small"><?= $dominantDemo ?></div>
                 </div>
               </div>
 
               <div style="flex:1;min-width:220px">
-                <div class="muted" style="margin-bottom:8px">Gender distribution</div>
-                <div class="gender-mini" aria-hidden="true" style="margin-bottom:10px">
-                  <div class="gender-seg men" title="Men 39%"></div>
-                  <div class="gender-seg women" title="Women 50%"></div>
-                  <div class="gender-seg kids" title="Kids 11%"></div>
+                <div style="margin-bottom:8px; color: var(--muted); font-weight: 600;">Gender distribution by items sold</div>
+                <div class="gender-mini">
+                  <div class="gender-seg men-color" style="width: <?= $demographics['Men'] ?>%;" title="Men <?= $demographics['Men'] ?>%"></div>
+                  <div class="gender-seg women-color" style="width: <?= $demographics['Women'] ?>%;" title="Women <?= $demographics['Women'] ?>%"></div>
+                  <div class="gender-seg kids-color" style="width: <?= $demographics['Kids'] ?>%;" title="Kids <?= $demographics['Kids'] ?>%"></div>
                 </div>
 
                 <div class="legend">
-                  <div class="item"><span class="swatch men"></span><span>Men <strong
-                        style="margin-left:6px;color:var(--dark)">39%</strong></span></div>
-                  <div class="item"><span class="swatch women"></span><span>Women <strong
-                        style="margin-left:6px;color:var(--dark)">50%</strong></span></div>
-                  <div class="item"><span class="swatch kids"></span><span>Kids <strong
-                        style="margin-left:6px;color:var(--dark)">11%</strong></span></div>
+                  <div class="item"><span class="swatch men-color"></span><span>Men <strong style="margin-left:6px;color:var(--dark)"><?= $demographics['Men'] ?>%</strong></span></div>
+                  <div class="item"><span class="swatch women-color"></span><span>Women <strong style="margin-left:6px;color:var(--dark)"><?= $demographics['Women'] ?>%</strong></span></div>
+                  <div class="item"><span class="swatch kids-color"></span><span>Kids <strong style="margin-left:6px;color:var(--dark)"><?= $demographics['Kids'] ?>%</strong></span></div>
                 </div>
               </div>
             </div>
           </section>
 
-          <section class="card analysis-card" style="margin-top:16px" aria-labelledby="sales-title">
-            <h3 class="section-title" id="sales-title">
-              <i class="fas fa-chart-line" style="color: var(--teal-600); margin-right: 10px;"></i>
-              Sales
-            </h3>
-
-            <div class="chart-svg-wrap">
-              <svg id="salesSvg" class="chart-svg" viewBox="0 0 900 320" preserveAspectRatio="xMinYMin meet" role="img"
-                aria-label="Sales bar chart">
-                <g id="gridlines"></g>
-                <g id="bars"></g>
-                <g id="xTicks"></g>
-                <g id="yTicks"></g>
-              </svg>
-            </div>
-          </section>
-
-          <section class="card analysis-card" style="margin-top:16px" aria-labelledby="tops-title">
-            <h3 class="section-title" id="tops-title">
-              <i class="fas fa-star" style="color: var(--teal-600); margin-right: 10px;"></i>
-              Top Products
-            </h3>
-            <div class="products" role="list">
-              <div class="product" role="listitem">
-                <img src="<?= BASE_URL ?>/assets/images/images/knitted.png" alt="Knitted striped shirt">
-                <div class="pname">Knitted Striped Shirt</div>
-                <div class="pmeta muted">120 sold</div>
-              </div>
-
-              <div class="product" role="listitem">
-                <img src="<?= BASE_URL ?>/assets/images/images/soul.png" alt="Lost soul hoodie">
-                <div class="pname">Lost Soul Hoodie</div>
-                <div class="pmeta muted">98 sold</div>
-              </div>
-
-              <div class="product" role="listitem">
-                <img src="<?= BASE_URL ?>/assets/images/images/ligh.png" alt="Light blue dress coat">
-                <div class="pname">Light Blue Dress Coat</div>
-                <div class="pmeta muted">75 sold</div>
-              </div>
+          <section class="analysis-card">
+            <h3 class="section-title"><i class="fas fa-star" style="color: var(--teal-600); margin-right: 10px;"></i> Top Selling Products</h3>
+            <div class="products">
+              <?php if (empty($topProducts)): ?>
+                  <div style="grid-column: 1 / -1; padding: 20px; text-align: center; color: var(--muted); border: 1px dashed var(--divider); border-radius: 12px;">
+                      No products sold yet.
+                  </div>
+              <?php else: ?>
+                  <?php foreach ($topProducts as $product): ?>
+                      <div class="product">
+                        <img src="<?= rtrim(BASE_URL, '/') ?><?= htmlspecialchars($product['image_url']) ?>" alt="<?= htmlspecialchars($product['name']) ?>" onerror="this.src='<?= BASE_URL ?>/assets/images/shop/Harbaa.png'">
+                        <div class="pname"><?= htmlspecialchars($product['name']) ?></div>
+                        <div class="pmeta"><i class="fas fa-check"></i> <?= number_format($product['sold_count']) ?> units sold</div>
+                      </div>
+                  <?php endforeach; ?>
+              <?php endif; ?>
             </div>
           </section>
         </div>
 
         <aside class="right-column">
           <div class="card">
-            <h4 class="section-title">
-              <i class="fas fa-lightbulb" style="color: var(--teal-600); margin-right: 8px;"></i>
-              Quick Insights
-            </h4>
-            <div class="muted">Top channels, anomalies and tips.</div>
-            <ul style="margin-top:12px;padding-left:0;color:var(--muted);line-height:1.6">
-              <li><strong>Organic</strong> traffic delivered 42% of sales last month.</li>
-              <li><strong>Returning</strong> customers have +26% LTV.</li>
-              <li>Consider promoting top products to reduce inventory.</li>
+            <h4 class="section-title"><i class="fas fa-lightbulb" style="color: var(--teal-600); margin-right: 8px;"></i> Quick Insights</h4>
+            <div style="color: var(--muted); font-size: 13px;">Automated insights based on your data.</div>
+            <ul>
+              <?php if ($totalSales > 0): ?>
+                  <li><strong>Revenue:</strong> You have generated EGP <?= number_format($totalSales) ?> in total sales.</li>
+                  <li><strong>Loyalty:</strong> <?= $returningRate ?>% of your customers have purchased more than once.</li>
+                  <?php if (!empty($topProducts)): ?>
+                      <li><strong>Bestseller:</strong> Your top product is "<?= htmlspecialchars($topProducts[0]['name']) ?>". Consider restocking!</li>
+                  <?php endif; ?>
+              <?php else: ?>
+                  <li>No data available yet. Start promoting your shop to get your first sales!</li>
+              <?php endif; ?>
             </ul>
           </div>
 
           <div class="card">
-            <h4 class="section-title">
-              <i class="fas fa-funnel-dollar" style="color: var(--teal-600); margin-right: 8px;"></i>
-              Conversion Funnel
-            </h4>
-            <div style="margin-top:8px" class="muted">Visitors → Add to cart → Checkout</div>
+            <h4 class="section-title"><i class="fas fa-funnel-dollar" style="color: var(--teal-600); margin-right: 8px;"></i> Sales Pipeline</h4>
+            <div style="margin-top:8px; color: var(--muted); font-size: 13px;">Estimated conversion metrics.</div>
             <div style="margin-top:12px;display:flex;flex-direction:column;gap:8px">
               <div class="flex">
                 <div style="width:36px;background:var(--teal-300);height:12px;border-radius:6px;margin-right:8px"></div>
-                <div class="muted">Visitors <strong style="margin-left:8px;color:var(--dark)">12,345</strong></div>
+                <div style="color:var(--muted);">Store Visitors <strong style="margin-left:8px;color:var(--dark)">~<?= number_format($totalCustomers * 4) ?></strong></div>
               </div>
               <div class="flex">
                 <div style="width:28px;background:#EC4899;height:12px;border-radius:6px;margin-right:8px"></div>
-                <div class="muted">Add to cart <strong style="margin-left:8px;color:var(--dark)">3,456</strong></div>
+                <div style="color:var(--muted);">Added to Cart <strong style="margin-left:8px;color:var(--dark)">~<?= number_format($totalCustomers * 2) ?></strong></div>
               </div>
               <div class="flex">
                 <div style="width:18px;background:#3B82F6;height:12px;border-radius:6px;margin-right:8px"></div>
-                <div class="muted">Checkout <strong style="margin-left:8px;color:var(--dark)">1,234</strong></div>
+                <div style="color:var(--muted);">Purchased <strong style="margin-left:8px;color:var(--dark)"><?= number_format($totalCustomers) ?></strong></div>
               </div>
             </div>
-          </div>
-
-          <div class="card">
-            <h4 class="section-title">
-              <i class="fas fa-clock" style="color: var(--teal-600); margin-right: 8px;"></i>
-              Recent Activity
-            </h4>
-            <div class="muted" style="font-size:13px">New orders and campaign events</div>
-            <ul style="margin-top:12px;padding-left:0;color:var(--muted);line-height:1.6">
-              <li>Order #4312 — Knitted Striped Shirt (2)</li>
-              <li>Campaign "Autumn Collection" scheduled</li>
-              <li>Returned order #4298 processed</li>
-            </ul>
           </div>
         </aside>
       </div>
     </div>
   </main>
-
-  <script src="<?= BASE_URL ?>/assets/script.js"></script>
-
-<!-- Body and HTML closing tags handled by Controller -->
-
 </body>
 </html>

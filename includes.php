@@ -10,8 +10,14 @@ if (defined('INCLUDES_LOADED')) {
 }
 define('INCLUDES_LOADED', true);
 
-// Start session if not already started
+// Define custom session name based on the URL or parameters to allow concurrent testing
 if (session_status() === PHP_SESSION_NONE) {
+    $uri = $_SERVER['REQUEST_URI'] ?? '';
+    if (strpos($uri, 'brandowner') !== false || (isset($_GET['role']) && $_GET['role'] === 'brand_owner') || (isset($_GET['role']) && $_GET['role'] === 'brandowner')) {
+        session_name('BRAND_OWNER_SESSION');
+    } else {
+        session_name('CUSTOMER_SESSION');
+    }
     session_start();
 }
 
@@ -34,7 +40,7 @@ if (!defined('DB_PASS')) {
 
 // Base URL for the app (only define if not already defined)
 if (!defined('BASE_URL')) {
-    define('BASE_URL', 'http://localhost/dolaby_v2');
+    define('BASE_URL', 'http://localhost/dolaby_v2_SQA');
 }
 
 /**
@@ -565,7 +571,7 @@ class PromoCodeRepository
 
     public function getUsageCount(int $promoCodeId): int
     {
-        $sql = "SELECT COUNT(*) as count FROM promo_code_usage WHERE promo_code_id = :promo_code_id";
+        $sql = "SELECT COUNT(*) as count FROM orders WHERE promo_code_id = :promo_code_id AND order_status != 'cancelled'";
         $stmt = $this->pdo->prepare($sql);
         $stmt->execute(['promo_code_id' => $promoCodeId]);
         $result = $stmt->fetch();
@@ -596,6 +602,40 @@ class PromoCodeRepository
             $discount = $promo['value'];
         }
         return min($discount, $orderAmount);
+    }
+
+    public function findAll(): array
+    {
+        $sql = "SELECT promo_code_id, code, type, value, min_order_amount, max_discount, start_date, end_date, usage_limit FROM promo_codes ORDER BY created_at DESC";
+        $stmt = $this->pdo->query($sql);
+        return $stmt->fetchAll() ?: [];
+    }
+
+    public function create(array $data): int
+    {
+        $sql = "INSERT INTO promo_codes (code, type, value, min_order_amount, max_discount, start_date, end_date, usage_limit) VALUES (:code, :type, :value, :min_order_amount, :max_discount, :start_date, :end_date, :usage_limit)";
+        $stmt = $this->pdo->prepare($sql);
+        $stmt->execute([
+            'code' => strtoupper(trim($data['code'])),
+            'type' => $data['type'],
+            'value' => (float)$data['value'],
+            'min_order_amount' => !empty($data['min_order_amount']) ? (float)$data['min_order_amount'] : null,
+            'max_discount' => !empty($data['max_discount']) ? (float)$data['max_discount'] : null,
+            'start_date' => !empty($data['start_date']) ? $data['start_date'] : null,
+            'end_date' => !empty($data['end_date']) ? $data['end_date'] : null,
+            'usage_limit' => !empty($data['usage_limit']) ? (int)$data['usage_limit'] : null
+        ]);
+        return (int)$this->pdo->lastInsertId();
+    }
+
+    public function delete(int $promoCodeId): void
+    {
+        // Delete usages first to avoid foreign key constraints (if no cascade)
+        $stmt = $this->pdo->prepare("DELETE FROM promo_code_usage WHERE promo_code_id = :promo_code_id");
+        $stmt->execute(['promo_code_id' => $promoCodeId]);
+
+        $stmt = $this->pdo->prepare("DELETE FROM promo_codes WHERE promo_code_id = :promo_code_id");
+        $stmt->execute(['promo_code_id' => $promoCodeId]);
     }
 }
 }
@@ -1137,6 +1177,102 @@ class LoyaltyService
     public function getTransactions(int $userId, int $limit = 10): array
     {
         return $this->loyaltyRepository->getTransactions($userId, $limit);
+    }
+}
+}
+
+/**
+ * Analytics Service
+ */
+if (!class_exists('AnalyticsService')) {
+class AnalyticsService
+{
+    private $pdo;
+
+    public function __construct()
+    {
+        $this->pdo = Database::connect();
+    }
+
+    public function getTotalSales(): float
+    {
+        $sql = "SELECT SUM(total_amount) as total FROM orders WHERE order_status != 'cancelled'";
+        $stmt = $this->pdo->query($sql);
+        $result = $stmt->fetch();
+        return (float)($result['total'] ?? 0);
+    }
+
+    public function getUniqueCustomers(): int
+    {
+        $sql = "SELECT COUNT(DISTINCT user_id) as count FROM orders WHERE order_status != 'cancelled'";
+        $stmt = $this->pdo->query($sql);
+        $result = $stmt->fetch();
+        return (int)($result['count'] ?? 0);
+    }
+
+    public function getReturningCustomerRate(): int
+    {
+        $sql = "SELECT user_id, COUNT(*) as order_count FROM orders WHERE order_status != 'cancelled' GROUP BY user_id";
+        $stmt = $this->pdo->query($sql);
+        $users = $stmt->fetchAll();
+        
+        if (empty($users)) return 0;
+
+        $returningCount = 0;
+        foreach ($users as $u) {
+            if ($u['order_count'] > 1) {
+                $returningCount++;
+            }
+        }
+
+        return (int)round(($returningCount / count($users)) * 100);
+    }
+
+    public function getCategoryDemographics(): array
+    {
+        $sql = "SELECT c.category_name, SUM(oi.quantity) as qty 
+                FROM order_items oi 
+                JOIN products p ON oi.product_id = p.product_id 
+                LEFT JOIN categories c ON p.category_id = c.category_id 
+                JOIN orders o ON oi.order_id = o.order_id
+                WHERE o.order_status != 'cancelled'
+                GROUP BY c.category_name";
+        $stmt = $this->pdo->query($sql);
+        $results = $stmt->fetchAll();
+
+        $demographics = ['Men' => 0, 'Women' => 0, 'Kids' => 0];
+        $total = 0;
+
+        foreach ($results as $row) {
+            $cat = strtolower((string)$row['category_name']);
+            if (strpos($cat, 'men') !== false && strpos($cat, 'women') === false) $demographics['Men'] += $row['qty'];
+            elseif (strpos($cat, 'women') !== false) $demographics['Women'] += $row['qty'];
+            elseif (strpos($cat, 'kid') !== false) $demographics['Kids'] += $row['qty'];
+            else $demographics['Men'] += $row['qty']; // Default fallback if no category
+            $total += $row['qty'];
+        }
+
+        if ($total === 0) return ['Men' => 0, 'Women' => 0, 'Kids' => 0];
+
+        return [
+            'Men' => (int)round(($demographics['Men'] / $total) * 100),
+            'Women' => (int)round(($demographics['Women'] / $total) * 100),
+            'Kids' => (int)round(($demographics['Kids'] / $total) * 100),
+        ];
+    }
+
+    public function getTopProducts(int $limit = 3): array
+    {
+        $sql = "SELECT p.product_id as id, p.product_name as name, p.image_url, SUM(oi.quantity) as sold_count 
+                FROM order_items oi 
+                JOIN products p ON oi.product_id = p.product_id 
+                JOIN orders o ON oi.order_id = o.order_id
+                WHERE o.order_status != 'cancelled'
+                GROUP BY p.product_id, p.product_name, p.image_url 
+                ORDER BY sold_count DESC 
+                LIMIT " . (int)$limit;
+        $stmt = $this->pdo->query($sql);
+        return $stmt->fetchAll() ?: [];
     }
 }
 }
