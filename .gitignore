@@ -28,3 +28,6 @@ mask
 # Testing Artifacts
 .phpunit.result.cache
 test_report.html
+
+# Local Documentation
+/plan/
