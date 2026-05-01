@@ -21,3 +21,10 @@ mask
 # Credentials
 *.key
 *.pem
+
+# Composer Dependencies
+/vendor/
+
+# Testing Artifacts
+.phpunit.result.cache
+test_report.html
