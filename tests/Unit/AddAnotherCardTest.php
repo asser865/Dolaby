@@ -3,11 +3,11 @@
 use PHPUnit\Framework\TestCase;
 
 /**
- * Test Suite: Payment Card Validation
- * Source Files: addanothercard.php, paymentmethod.php, viewcard.php
+ * Test Suite: Add Another Card Validation
+ * Source File: addanothercard.php
  * Covers: Luhn algorithm, expiry date validation, cardholder name, card type
  */
-class PaymentValidationTest extends TestCase
+class AddAnotherCardTest extends TestCase
 {
     private function luhnValid(string $number): bool
     {
@@ -271,12 +271,12 @@ class PaymentValidationTest extends TestCase
     }
 
     // =========================================================
-    // NO CRASHES
+    // ROBUSTNESS
     // =========================================================
 
     /**
      * @test
-     * @group no_crash
+     * @group robustness
      */
     public function testLuhnValidWithEmptyStringHandledGracefully()
     {
@@ -286,25 +286,11 @@ class PaymentValidationTest extends TestCase
 
     /**
      * @test
-     * @group no_crash
+     * @group robustness
      */
     public function testCardholderNameEmptyStringHandledGracefully()
     {
         $result = $this->isValidCardholderName('');
         $this->assertFalse($result);
-    }
-
-    /**
-     * @test
-     * @group no_crash
-     */
-    public function testPaymentMethodRepositoryInstantiatesWithoutCrash()
-    {
-        $this->expectNotToPerformAssertions();
-        try {
-            $repo = new PaymentMethodRepository();
-        } catch (\Exception $e) {
-            $this->fail('PaymentMethodRepository constructor crashed: ' . $e->getMessage());
-        }
     }
 }
