@@ -15,7 +15,7 @@ if (isset($_GET['run'])) {
 
     foreach ($groups as $groupKey => $groupMeta) {
         $junitFile = __DIR__ . "/junit_{$groupKey}.xml";
-        $cmd = "$base --group $groupKey --log-junit " . escapeshellarg($junitFile) . " 2>&1";
+        $cmd = "$base -c ..\\phpunit.xml --group $groupKey --log-junit " . escapeshellarg($junitFile) . " 2>&1";
         exec($cmd, $out, $code);
 
         $groupData = [
