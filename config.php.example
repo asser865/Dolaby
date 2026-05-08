@@ -1,0 +1,17 @@
+<?php
+/**
+ * Database Configuration
+ * Copy this file to config.php and update with your local settings.
+ */
+
+define('DB_HOST', '127.0.0.1');
+define('DB_PORT', '3307');
+define('DB_NAME', 'dolaby_v2');
+define('DB_USER', 'root');
+define('DB_PASS', '');
+
+define('BASE_URL', 'http://localhost/dolaby_v2');
+
+// Application Constants
+define('SHIPPING_FEE', 40.00);
+define('SERVICE_FEE', 10.00);

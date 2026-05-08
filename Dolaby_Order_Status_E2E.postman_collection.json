@@ -1,0 +1,156 @@
+{
+	"info": {
+		"_postman_id": "b1a2c3d4-e5f6-4a5b-9c8d-7e6f5a4b3c2d",
+		"name": "Dolaby Order Status E2E",
+		"description": "End-to-End flow for checking and updating order status as required by the professor.",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "1. Check Initial Status",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Status code is 200\", function () {",
+							"    pm.response.to.have.status(200);",
+							"});",
+							"",
+							"var jsonData = pm.response.json();",
+							"if (jsonData.success) {",
+							"    pm.environment.set(\"old_status\", jsonData.status);",
+							"    console.log(\"Current status is: \" + jsonData.status);",
+							"}"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{base_url}}/api_order_status?order_id={{order_id}}&user_id={{user_id}}",
+					"host": [
+						"{{base_url}}"
+					],
+					"path": [
+						"api_order_status"
+					],
+					"query": [
+						{
+							"key": "order_id",
+							"value": "{{order_id}}"
+						},
+						{
+							"key": "user_id",
+							"value": "{{user_id}}"
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "2. Update Status to Shipped",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Update successful\", function () {",
+							"    pm.expect(pm.response.json().success).to.be.true;",
+							"});"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"order_id\": {{order_id}},\n    \"status\": \"shipped\"\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{base_url}}/api_update_order_status",
+					"host": [
+						"{{base_url}}"
+					],
+					"path": [
+						"api_update_order_status"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "3. Verify Status is Now Shipped",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Verify status is Shipped\", function () {",
+							"    var jsonData = pm.response.json();",
+							"    pm.expect(jsonData.status).to.eql(\"shipped\");",
+							"});",
+							"",
+							"pm.test(\"Status changed from previous\", function () {",
+							"    var jsonData = pm.response.json();",
+							"    var oldStatus = pm.environment.get(\"old_status\");",
+							"    pm.expect(jsonData.status).to.not.eql(oldStatus);",
+							"});"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{base_url}}/api_order_status?order_id={{order_id}}&user_id={{user_id}}",
+					"host": [
+						"{{base_url}}"
+					],
+					"path": [
+						"api_order_status"
+					],
+					"query": [
+						{
+							"key": "order_id",
+							"value": "{{order_id}}"
+						},
+						{
+							"key": "user_id",
+							"value": "{{user_id}}"
+						}
+					]
+				}
+			},
+			"response": []
+		}
+	],
+	"variable": [
+		{
+			"key": "base_url",
+			"value": "http://localhost/dolaby_v2"
+		},
+		{
+			"key": "order_id",
+			"value": "4"
+		},
+		{
+			"key": "user_id",
+			"value": "5"
+		}
+	]
+}
