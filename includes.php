@@ -88,7 +88,7 @@ class UserRepository
 
     public function findByEmail(string $email): ?array
     {
-        $sql = "SELECT user_id, first_name, last_name, email, password_hash, role, phone, date_of_birth, account_status, created_at FROM users WHERE email = :email";
+        $sql = "SELECT user_id, first_name, last_name, email, password_hash, role, phone, date_of_birth, account_status, api_token, created_at FROM users WHERE email = :email";
         $stmt = $this->pdo->prepare($sql);
         $stmt->execute(['email' => $email]);
         return $stmt->fetch() ?: null;
@@ -96,7 +96,7 @@ class UserRepository
 
     public function findById(int $id): ?array
     {
-        $sql = "SELECT user_id, first_name, last_name, email, password_hash, role, phone, date_of_birth, account_status, created_at FROM users WHERE user_id = :id";
+        $sql = "SELECT user_id, first_name, last_name, email, password_hash, role, phone, date_of_birth, account_status, api_token, created_at FROM users WHERE user_id = :id";
         $stmt = $this->pdo->prepare($sql);
         $stmt->execute(['id' => $id]);
         return $stmt->fetch() ?: null;
@@ -151,6 +151,21 @@ class UserRepository
         $sql = "DELETE FROM users WHERE user_id = :user_id";
         $stmt = $this->pdo->prepare($sql);
         return $stmt->execute(['user_id' => $userId]);
+    }
+
+    public function findByToken(string $token): ?array
+    {
+        $sql = "SELECT user_id, first_name, last_name, email, role, account_status, api_token FROM users WHERE api_token = :token";
+        $stmt = $this->pdo->prepare($sql);
+        $stmt->execute(['token' => $token]);
+        return $stmt->fetch() ?: null;
+    }
+
+    public function updateToken(int $userId, ?string $token): bool
+    {
+        $sql = "UPDATE users SET api_token = :token WHERE user_id = :user_id";
+        $stmt = $this->pdo->prepare($sql);
+        return $stmt->execute(['token' => $token, 'user_id' => $userId]);
     }
 }
 }
@@ -538,7 +553,7 @@ class PromoCodeRepository
 
     public function findByCode(string $code): ?array
     {
-        $sql = "SELECT promo_code_id, code, type, value, min_order_amount, max_discount, start_date, end_date, usage_limit FROM promo_codes WHERE code = :code";
+        $sql = "SELECT promo_code_id, code, type, value, min_order_amount, max_discount, start_date, end_date, usage_limit, is_active FROM promo_codes WHERE code = :code";
         $stmt = $this->pdo->prepare($sql);
         $stmt->execute(['code' => strtoupper(trim($code))]);
         return $stmt->fetch() ?: null;
@@ -547,7 +562,7 @@ class PromoCodeRepository
     public function validateCode(string $code, float $orderAmount): ?array
     {
         $promo = $this->findByCode($code);
-        if (!$promo) {
+        if (!$promo || !$promo['is_active']) {
             return null;
         }
         $today = date('Y-m-d');
@@ -606,7 +621,7 @@ class PromoCodeRepository
 
     public function findAll(): array
     {
-        $sql = "SELECT promo_code_id, code, type, value, min_order_amount, max_discount, start_date, end_date, usage_limit FROM promo_codes ORDER BY created_at DESC";
+        $sql = "SELECT promo_code_id, code, type, value, min_order_amount, max_discount, start_date, end_date, usage_limit, is_active FROM promo_codes ORDER BY created_at DESC";
         $stmt = $this->pdo->query($sql);
         return $stmt->fetchAll() ?: [];
     }
@@ -731,6 +746,59 @@ class AuthService
     public function getUserById(int $id): ?array
     {
         return $this->userRepository->findById($id);
+    }
+
+    public function generateToken(int $userId): string
+    {
+        $token = bin2hex(random_bytes(32));
+        $this->userRepository->updateToken($userId, $token);
+        return $token;
+    }
+}
+}
+
+/**
+ * API Auth Service
+ */
+if (!class_exists('ApiAuthService')) {
+class ApiAuthService
+{
+    private $userRepository;
+
+    public function __construct()
+    {
+        $this->userRepository = new UserRepository();
+    }
+
+    public function authenticate(): ?array
+    {
+        $headers = getallheaders();
+        $token = null;
+
+        if (isset($headers['Authorization'])) {
+            $authHeader = $headers['Authorization'];
+            if (preg_match('/Bearer\s+(.*)$/i', $authHeader, $matches)) {
+                $token = $matches[1];
+            }
+        } elseif (isset($_GET['api_token'])) {
+            $token = $_GET['api_token'];
+        }
+
+        if (!$token) {
+            return null;
+        }
+
+        $user = $this->userRepository->findByToken($token);
+        if (!$user || $user['account_status'] !== 'active') {
+            return null;
+        }
+
+        return $user;
+    }
+
+    public function authorizeBrandOwner(?array $user): bool
+    {
+        return $user && $user['role'] === 'brand_owner';
     }
 }
 }

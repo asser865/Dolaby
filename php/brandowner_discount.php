@@ -386,12 +386,15 @@ renderHeader(true);
                 $status = 'active';
                 $statusLabel = 'Active';
                 $today = date('Y-m-d');
-                if ($promo['start_date'] && $promo['start_date'] > $today) {
+                if (!$promo['is_active']) {
+                    $status = 'ended'; // Using 'ended' class for red/gray styling
+                    $statusLabel = 'Inactive (Killed)';
+                } elseif ($promo['start_date'] && $promo['start_date'] > $today) {
                     $status = 'scheduled';
                     $statusLabel = 'Scheduled';
                 } elseif ($promo['end_date'] && $promo['end_date'] < $today) {
                     $status = 'ended';
-                    $statusLabel = 'Ended';
+                    $statusLabel = 'Expired';
                 }
 
                 // Format value
