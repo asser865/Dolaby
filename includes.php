@@ -707,9 +707,9 @@ class ReviewRepository
 
     public function updateProductRating(int $productId): void
     {
-        $sql = "UPDATE products SET average_rating = (SELECT AVG(rating) FROM product_reviews WHERE product_id = :product_id), total_reviews = (SELECT COUNT(*) FROM product_reviews WHERE product_id = :product_id) WHERE product_id = :product_id";
+        $sql = "UPDATE products SET average_rating = (SELECT AVG(rating) FROM product_reviews WHERE product_id = ?), total_reviews = (SELECT COUNT(*) FROM product_reviews WHERE product_id = ?) WHERE product_id = ?";
         $stmt = $this->pdo->prepare($sql);
-        $stmt->execute(['product_id' => $productId]);
+        $stmt->execute([$productId, $productId, $productId]);
     }
 }
 }
