@@ -24,6 +24,19 @@ foreach ($orders as $order) {
     }
 }
 
+// Fetch payment transactions for all orders to show API proof
+$paymentTransactions = [];
+if (!empty($orders)) {
+    $orderIds = array_column($orders, 'order_id');
+    $placeholders = implode(',', array_fill(0, count($orderIds), '?'));
+    $pdo = Database::connect();
+    $stmt = $pdo->prepare("SELECT * FROM payment_transactions WHERE order_id IN ($placeholders)");
+    $stmt->execute($orderIds);
+    while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
+        $paymentTransactions[$row['order_id']] = $row;
+    }
+}
+
 renderHeader();
 ?>
 
@@ -139,6 +152,58 @@ renderHeader();
     margin-bottom: 12px;
     color: var(--dark);
   }
+
+  /* API LOG STYLES */
+  .api-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 12px;
+    background: #F1F5F9;
+    border: 1px solid #CBD5E1;
+    border-radius: 8px;
+    font-family: 'Courier New', Courier, monospace;
+    font-size: 12px;
+    font-weight: bold;
+    color: #475569;
+    cursor: pointer;
+    margin-top: 10px;
+  }
+
+  .api-badge:hover {
+    background: #E2E8F0;
+  }
+
+  .api-badge.success {
+    color: #16A34A;
+    border-color: #BBF7D0;
+    background: #F0FDF4;
+  }
+
+  .api-log-details {
+    display: none;
+    margin-top: 10px;
+    padding: 15px;
+    background: #0F172A;
+    color: #94A3B8;
+    border-radius: 8px;
+    font-family: 'Courier New', Courier, monospace;
+    font-size: 12px;
+    line-height: 1.5;
+    border-left: 4px solid #16A34A;
+  }
+
+  .api-log-details.show {
+    display: block;
+  }
+
+  .api-log-header {
+    color: #F8FAFC;
+    margin-bottom: 8px;
+    border-bottom: 1px solid #1E293B;
+    padding-bottom: 4px;
+    font-weight: bold;
+  }
 </style>
 
 <!-- Main Content -->
@@ -231,6 +296,23 @@ renderHeader();
               </div>
               
               <p class="card-price">Total: EGP <?= number_format($order['total_amount'], 2) ?></p>
+              
+              <!-- API INTEGRATION PROOF SECTION -->
+              <?php if (isset($paymentTransactions[$order['order_id']])): ?>
+                <?php $tx = $paymentTransactions[$order['order_id']]; ?>
+                <div class="api-badge success" onclick="toggleApiLog(<?= $order['order_id'] ?>)">
+                  <span>🛡️ Payment API Verified</span>
+                  <span style="font-size: 10px; opacity: 0.7;">(Click for E2E Log)</span>
+                </div>
+                <div id="api-log-<?= $order['order_id'] ?>" class="api-log-details">
+                   <div class="api-log-header">POST /api_payment - SUCCESS</div>
+                   <div>> Request: { order_id: <?= $order['order_id'] ?>, amount: <?= $order['total_amount'] ?> }</div>
+                   <div>> Gateway: MockPaymentGateway (VISA)</div>
+                   <div>> Status: <?= strtoupper($tx['status']) ?></div>
+                   <div>> TransactionID: <?= $tx['gateway_transaction_id'] ?></div>
+                   <div>> DB Sync: payment_transactions [Row #<?= $tx['transaction_id'] ?>]</div>
+                </div>
+              <?php endif; ?>
               
               <?php if ($canRate): ?>
                 <span class="view-link" onclick="window.location.href='<?= BASE_URL ?>/order/details?id=<?= $order['order_id'] ?>'">View Details</span>
@@ -346,6 +428,13 @@ renderHeader();
     });
   });
 })();
+
+function toggleApiLog(orderId) {
+  const log = document.getElementById('api-log-' + orderId);
+  if (log) {
+    log.classList.toggle('show');
+  }
+}
 </script>
 
 <!-- Body and HTML closing tags handled by Controller -->

@@ -79,6 +79,7 @@ $routes = [
     'cart_remove' => 'cart_remove.php',
     'validate_promo' => 'validate_promo.php',
     'submit_rating' => 'submit_rating.php',
+    'api_payment' => 'api_payment.php',
 ];
 
 // Handle special routes

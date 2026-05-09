@@ -1,0 +1,319 @@
+{
+	"info": {
+		"name": "Dolaby - Payment API E2E Tests",
+		"description": "End-to-End test collection for the Dolaby Payment Processing API.\nCovers: successful payment, validation errors, declined card, and duplicate payment.\n\nBEFORE RUNNING: Change 'order_id' in Test 1 to a real order ID from your database.",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "Test 1 - Successful Payment (Happy Path)",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test('Status code is 200', function () {",
+							"    pm.response.to.have.status(200);",
+							"});",
+							"pm.test('Payment was successful', function () {",
+							"    var json = pm.response.json();",
+							"    pm.expect(json.success).to.be.true;",
+							"});",
+							"pm.test('Response contains a receipt', function () {",
+							"    var json = pm.response.json();",
+							"    pm.expect(json.receipt).to.exist;",
+							"    pm.expect(json.receipt.status).to.eql('success');",
+							"});",
+							"pm.test('Card is masked in response', function () {",
+							"    var json = pm.response.json();",
+							"    pm.expect(json.receipt.card_charged).to.include('**** **** ****');",
+							"});",
+							"// Save transaction_ref for later use",
+							"var json = pm.response.json();",
+							"if (json.receipt) {",
+							"    pm.collectionVariables.set('last_transaction_ref', json.receipt.transaction_ref);",
+							"    pm.collectionVariables.set('paid_order_id', json.receipt.order_id);",
+							"}"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"order_id\": 5,\n    \"card_number\": \"4111111111111111\",\n    \"cardholder_name\": \"Ahmed Yasser\",\n    \"expiry_month\": \"12\",\n    \"expiry_year\": \"2027\",\n    \"cvv\": \"123\"\n}"
+				},
+				"url": {
+					"raw": "http://localhost/dolaby_v2_SQA/api_payment",
+					"protocol": "http",
+					"host": ["localhost"],
+					"path": ["dolaby_v2_SQA", "api_payment"]
+				},
+				"description": "HAPPY PATH: Send valid card details for an existing order.\nExpected: 200 OK with a payment receipt containing a transaction_ref and masked card number.\nDB Check: payment_transactions gets a new row with status='approved', orders table status becomes 'confirmed'."
+			}
+		},
+		{
+			"name": "Test 2 - Duplicate Payment (Already Paid)",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test('Status code is 409 Conflict', function () {",
+							"    pm.response.to.have.status(409);",
+							"});",
+							"pm.test('API rejects duplicate payment', function () {",
+							"    var json = pm.response.json();",
+							"    pm.expect(json.success).to.be.false;",
+							"    pm.expect(json.message).to.include('already been paid');",
+							"});"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"order_id\": 5,\n    \"card_number\": \"4111111111111111\",\n    \"cardholder_name\": \"Ahmed Yasser\",\n    \"expiry_month\": \"12\",\n    \"expiry_year\": \"2027\",\n    \"cvv\": \"123\"\n}"
+				},
+				"url": {
+					"raw": "http://localhost/dolaby_v2_SQA/api_payment",
+					"protocol": "http",
+					"host": ["localhost"],
+					"path": ["dolaby_v2_SQA", "api_payment"]
+				},
+				"description": "DUPLICATE TEST: Same request as Test 1 — the order is already paid.\nExpected: 409 Conflict with message 'already been paid'.\nThis proves the API prevents charging a customer twice."
+			}
+		},
+		{
+			"name": "Test 3 - Declined Card",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test('Status code is 402 Payment Required', function () {",
+							"    pm.response.to.have.status(402);",
+							"});",
+							"pm.test('Payment was declined', function () {",
+							"    var json = pm.response.json();",
+							"    pm.expect(json.success).to.be.false;",
+							"    pm.expect(json.message).to.include('declined');",
+							"});"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"order_id\": 3,\n    \"card_number\": \"0000111122223333\",\n    \"cardholder_name\": \"Test Decline\",\n    \"expiry_month\": \"12\",\n    \"expiry_year\": \"2027\",\n    \"cvv\": \"999\"\n}"
+				},
+				"url": {
+					"raw": "http://localhost/dolaby_v2_SQA/api_payment",
+					"protocol": "http",
+					"host": ["localhost"],
+					"path": ["dolaby_v2_SQA", "api_payment"]
+				},
+				"description": "DECLINED CARD TEST: Card starting with 0000 simulates a card rejected by the bank.\nExpected: 402 Payment Required with message 'Payment declined'.\nDB Check: payment_transactions gets a row with status='declined'."
+			}
+		},
+		{
+			"name": "Test 4 - Expired Card",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test('Status code is 400 Bad Request', function () {",
+							"    pm.response.to.have.status(400);",
+							"});",
+							"pm.test('API rejects expired card', function () {",
+							"    var json = pm.response.json();",
+							"    pm.expect(json.success).to.be.false;",
+							"    pm.expect(json.message).to.include('expired');",
+							"});"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"order_id\": 3,\n    \"card_number\": \"4111111111111111\",\n    \"cardholder_name\": \"Ahmed Yasser\",\n    \"expiry_month\": \"01\",\n    \"expiry_year\": \"2020\",\n    \"cvv\": \"123\"\n}"
+				},
+				"url": {
+					"raw": "http://localhost/dolaby_v2_SQA/api_payment",
+					"protocol": "http",
+					"host": ["localhost"],
+					"path": ["dolaby_v2_SQA", "api_payment"]
+				},
+				"description": "EXPIRED CARD TEST: Card expiry year is 2020 which is in the past.\nExpected: 400 Bad Request with message 'Card is expired'.\nThis validates that the API protects against expired card usage."
+			}
+		},
+		{
+			"name": "Test 5 - Invalid CVV Format",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test('Status code is 400 Bad Request', function () {",
+							"    pm.response.to.have.status(400);",
+							"});",
+							"pm.test('API rejects invalid CVV', function () {",
+							"    var json = pm.response.json();",
+							"    pm.expect(json.success).to.be.false;",
+							"    pm.expect(json.message).to.include('CVV');",
+							"});"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"order_id\": 3,\n    \"card_number\": \"4111111111111111\",\n    \"cardholder_name\": \"Ahmed Yasser\",\n    \"expiry_month\": \"12\",\n    \"expiry_year\": \"2027\",\n    \"cvv\": \"AB\"\n}"
+				},
+				"url": {
+					"raw": "http://localhost/dolaby_v2_SQA/api_payment",
+					"protocol": "http",
+					"host": ["localhost"],
+					"path": ["dolaby_v2_SQA", "api_payment"]
+				},
+				"description": "INVALID CVV TEST: CVV contains letters instead of digits.\nExpected: 400 Bad Request with message 'Invalid CVV'."
+			}
+		},
+		{
+			"name": "Test 6 - Missing Required Fields",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test('Status code is 400 Bad Request', function () {",
+							"    pm.response.to.have.status(400);",
+							"});",
+							"pm.test('API reports missing fields', function () {",
+							"    var json = pm.response.json();",
+							"    pm.expect(json.success).to.be.false;",
+							"});"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"order_id\": 3\n}"
+				},
+				"url": {
+					"raw": "http://localhost/dolaby_v2_SQA/api_payment",
+					"protocol": "http",
+					"host": ["localhost"],
+					"path": ["dolaby_v2_SQA", "api_payment"]
+				},
+				"description": "MISSING FIELDS TEST: Only order_id is sent, no card details.\nExpected: 400 Bad Request with message about missing card details."
+			}
+		},
+		{
+			"name": "Test 7 - Order Not Found",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test('Status code is 404 Not Found', function () {",
+							"    pm.response.to.have.status(404);",
+							"});",
+							"pm.test('API reports order not found', function () {",
+							"    var json = pm.response.json();",
+							"    pm.expect(json.success).to.be.false;",
+							"    pm.expect(json.message).to.include('not found');",
+							"});"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"order_id\": 99999,\n    \"card_number\": \"4111111111111111\",\n    \"cardholder_name\": \"Ahmed Yasser\",\n    \"expiry_month\": \"12\",\n    \"expiry_year\": \"2027\",\n    \"cvv\": \"123\"\n}"
+				},
+				"url": {
+					"raw": "http://localhost/dolaby_v2_SQA/api_payment",
+					"protocol": "http",
+					"host": ["localhost"],
+					"path": ["dolaby_v2_SQA", "api_payment"]
+				},
+				"description": "ORDER NOT FOUND TEST: Order ID 99999 does not exist in the database.\nExpected: 404 Not Found."
+			}
+		}
+	],
+	"variable": [
+		{
+			"key": "last_transaction_ref",
+			"value": ""
+		},
+		{
+			"key": "paid_order_id",
+			"value": ""
+		}
+	]
+}
