@@ -16,6 +16,15 @@ if ($product_id <= 0) {
 }
 
 try {
+    $pdo = Database::connect();
+    $chk = $pdo->prepare('SELECT product_id FROM products WHERE product_id = :id');
+    $chk->execute(['id' => $product_id]);
+    if (!$chk->fetch()) {
+        http_response_code(404);
+        echo json_encode(['success' => false, 'message' => 'Product not found.']);
+        exit;
+    }
+
     $reviewRepo = new ReviewRepository();
     $reviews    = $reviewRepo->getByProductId($product_id);
 
