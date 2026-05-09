@@ -411,3 +411,26 @@ CREATE TABLE brand_analytics (
     INDEX idx_metric (metric),
     INDEX idx_recorded_at (recorded_at)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- ========================================================
+-- PAYMENT TRANSACTIONS TABLE (added by Yasser - payment flow)
+-- ========================================================
+CREATE TABLE payment_transactions (
+    transaction_id INT PRIMARY KEY AUTO_INCREMENT,
+    order_id INT NOT NULL,
+    payment_method_id INT DEFAULT NULL,
+    amount DECIMAL(10,2) NOT NULL,
+    status ENUM('pending','success','failed') NOT NULL DEFAULT 'pending',
+    gateway_transaction_id VARCHAR(255) DEFAULT NULL,
+    raw_response TEXT DEFAULT NULL,
+    gateway_response TEXT DEFAULT NULL,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (order_id) REFERENCES orders(order_id) ON DELETE CASCADE,
+    FOREIGN KEY (payment_method_id) REFERENCES payment_methods(payment_method_id) ON DELETE SET NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- ========================================================
+-- MIGRATIONS (run these if you already have the database)
+-- ========================================================
+-- Added by Asser (Brand Owner API - Promo Kill Switch):
+-- ALTER TABLE promo_codes ADD COLUMN is_active BOOLEAN DEFAULT TRUE;

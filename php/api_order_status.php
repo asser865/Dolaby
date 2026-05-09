@@ -1,7 +1,10 @@
-﻿<?php
+<?php
 /**
  * Internal API to check order status
  */
+header('Content-Type: application/json');
+error_reporting(0);
+ini_set('display_errors', 0);
 require_once __DIR__ . '/../includes.php';
 
 // Check if user is logged in (Session) OR provided via request (Simulated Token for Postman)

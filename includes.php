@@ -429,6 +429,13 @@ class OrderRepository
         $stmt->execute(['order_id' => $orderId]);
         return $stmt->fetchAll();
     }
+
+    public function updateOrderStatus(int $orderId, string $status): bool
+    {
+        $sql = "UPDATE orders SET order_status = :status, updated_at = CURRENT_TIMESTAMP WHERE order_id = :order_id";
+        $stmt = $this->pdo->prepare($sql);
+        return $stmt->execute(['status' => $status, 'order_id' => $orderId]);
+    }
 }
 }
 
