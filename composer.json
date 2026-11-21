@@ -1,5 +1,12 @@
 {
+    "name": "dolaby/ecommerce",
+    "description": "Dolaby - Egyptian Local Fashion E-Commerce Marketplace & Multi-Vendor Platform",
+    "type": "project",
+    "license": "MIT",
     "require-dev": {
         "phpunit/phpunit": "^9.6"
+    },
+    "scripts": {
+        "test": "phpunit --colors=always"
     }
 }

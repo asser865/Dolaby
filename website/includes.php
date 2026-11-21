@@ -49,8 +49,18 @@ if (!defined('BASE_URL')) {
 if (!class_exists('Database')) {
 class Database
 {
+    private static ?PDO $testPdo = null;
+
+    public static function setTestConnection(?PDO $pdo): void
+    {
+        self::$testPdo = $pdo;
+    }
+
     public static function connect(): PDO
     {
+        if (self::$testPdo !== null) {
+            return self::$testPdo;
+        }
         if (!defined('DB_HOST') || !defined('DB_PORT') || !defined('DB_NAME') || !defined('DB_USER') || !defined('DB_PASS')) {
             throw new Exception('Database configuration constants are not defined');
         }

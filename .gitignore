@@ -1,35 +1,27 @@
-# Local configuration files
-config.local.php
-.env
-
-# XAMPP / PHP artifacts
-php_error.log
-*.log
-
-# IDEs
-.vscode/
-.idea/
-
-# OS Junk
-Thumbs.db
-.DS_Store
-mask
-.bak
-*.tmp
-*.temp
-
-# Credentials
-*.key
-*.pem
-
-# Composer Dependencies
+# Dependencies
 /vendor/
+composer.phar
 
-# Testing Artifacts
+# Environment & Local Overrides
+*.env
+*.local
+.env.*
+
+# Logs and databases
+*.log
+*.sqlite
+*.db
+
+# IDE & Editor files
+.idea/
+.vscode/
+*.suo
+*.ntvs*
+*.njsproj
+*.sublime-workspace
+.DS_Store
+Thumbs.db
+
+# Test artifacts
 .phpunit.result.cache
-test_report.html
-
-# Local Documentation
-/plan/
-
-postman_tests/
+coverage/
